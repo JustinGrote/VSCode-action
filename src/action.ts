@@ -1,6 +1,6 @@
 import { getInput, info, warning, setFailed } from '@actions/core';
 import { exec } from '@actions/exec';
-import { downloadTool, extractZip, extractTar } from '@actions/tool-cache';
+import { downloadTool, extractZip, extractTar, cacheFile } from '@actions/tool-cache';
 import { existsSync, mkdirSync, chmodSync } from 'node:fs';
 import { platform, arch, homedir } from 'node:os';
 import { join } from 'node:path';
@@ -35,7 +35,7 @@ async function main() {
       case 'win32':
         downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64';
         fileName = 'code-cli.zip';
-        extractPath = join('C:\\', 'vscode-cli');
+        extractPath = join(homedir(), 'vscode-cli');
         break;
       default:
         throw new Error(`Unsupported platform: ${runnerPlatform}`);
@@ -68,11 +68,12 @@ async function main() {
 
     // Make code executable on Unix
     if (runnerPlatform !== 'win32') {
+      info('Making code CLI executable...');
       const codePath = join(extractPath, 'code');
       chmodSync(codePath, '755');
     }
 
-    // Get version
+    // Determine path to `code` executable and get version
     info('Getting VS Code CLI version...');
     let codeExe = '';
     if (runnerPlatform === 'win32') {
@@ -81,11 +82,28 @@ async function main() {
       codeExe = join(extractPath, 'code');
     }
 
-    try {
-      await exec(codeExe, ['--version']);
-    } catch (error) {
-      warning(`Failed to get version: ${error}`);
+    // Capture stdout from --version
+    async function getCodeVersion(exePath: string): Promise<string> {
+      try {
+        let output = '';
+        const options = {
+          listeners: {
+            stdout: (data: Buffer) => {
+              output += data.toString();
+            }
+          }
+        } as any;
+        await exec(exePath, ['--version'], options);
+        const firstLine = output.split(/\r?\n/)[0]?.trim() || 'unknown';
+        return firstLine;
+      } catch (err) {
+        warning(`Failed to get version: ${err}`);
+        return 'unknown';
+      }
     }
+
+    const version = await getCodeVersion(codeExe);
+    info(`Detected VS Code CLI version: ${version}`);
 
     // Create CLI data directory
     let cliDataDir = '';
@@ -97,6 +115,15 @@ async function main() {
 
     if (!existsSync(cliDataDir)) {
       mkdirSync(cliDataDir, { recursive: true });
+    }
+
+    // Cache just the `code` executable to the runner tool cache for reuse
+    try {
+      info('Caching VS Code CLI executable to tool cache...');
+      const cachedFile = await cacheFile(codeExe, 'vscode', version, runnerArch);
+      info(`VS Code CLI executable cached at: ${cachedFile}`);
+    } catch (err) {
+      warning(`Failed to cache VS Code CLI executable: ${err}`);
     }
 
     // Start tunnel

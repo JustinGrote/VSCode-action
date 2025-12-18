@@ -21568,7 +21568,7 @@ var require_tool_cache = __commonJS({
       });
     }
     exports2.cacheDir = cacheDir;
-    function cacheFile(sourceFile, targetFile, tool, version, arch2) {
+    function cacheFile2(sourceFile, targetFile, tool, version, arch2) {
       return __awaiter(this, void 0, void 0, function* () {
         version = semver.clean(version) || version;
         arch2 = arch2 || os.arch();
@@ -21585,7 +21585,7 @@ var require_tool_cache = __commonJS({
         return destFolder;
       });
     }
-    exports2.cacheFile = cacheFile;
+    exports2.cacheFile = cacheFile2;
     function find(toolName, versionSpec, arch2) {
       if (!toolName) {
         throw new Error("toolName parameter is required");
@@ -21786,7 +21786,7 @@ async function main() {
       case "win32":
         downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64";
         fileName = "code-cli.zip";
-        extractPath = (0, import_node_path.join)("C:\\", "vscode-cli");
+        extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
         break;
       default:
         throw new Error(`Unsupported platform: ${runnerPlatform}`);
@@ -21810,6 +21810,7 @@ async function main() {
       }
     }
     if (runnerPlatform !== "win32") {
+      (0, import_core.info)("Making code CLI executable...");
       const codePath = (0, import_node_path.join)(extractPath, "code");
       (0, import_node_fs.chmodSync)(codePath, "755");
     }
@@ -21820,11 +21821,26 @@ async function main() {
     } else {
       codeExe = (0, import_node_path.join)(extractPath, "code");
     }
-    try {
-      await (0, import_exec.exec)(codeExe, ["--version"]);
-    } catch (error) {
-      (0, import_core.warning)(`Failed to get version: ${error}`);
+    async function getCodeVersion(exePath) {
+      try {
+        let output = "";
+        const options2 = {
+          listeners: {
+            stdout: (data) => {
+              output += data.toString();
+            }
+          }
+        };
+        await (0, import_exec.exec)(exePath, ["--version"], options2);
+        const firstLine = output.split(/\r?\n/)[0]?.trim() || "unknown";
+        return firstLine;
+      } catch (err) {
+        (0, import_core.warning)(`Failed to get version: ${err}`);
+        return "unknown";
+      }
     }
+    const version = await getCodeVersion(codeExe);
+    (0, import_core.info)(`Detected VS Code CLI version: ${version}`);
     let cliDataDir = "";
     if (runnerPlatform === "win32") {
       cliDataDir = (0, import_node_path.join)("C:\\", "vscode-cli-data");
@@ -21833,6 +21849,13 @@ async function main() {
     }
     if (!(0, import_node_fs.existsSync)(cliDataDir)) {
       (0, import_node_fs.mkdirSync)(cliDataDir, { recursive: true });
+    }
+    try {
+      (0, import_core.info)("Caching VS Code CLI executable to tool cache...");
+      const cachedFile = await (0, import_tool_cache.cacheFile)(codeExe, "vscode", version, runnerArch);
+      (0, import_core.info)(`VS Code CLI executable cached at: ${cachedFile}`);
+    } catch (err) {
+      (0, import_core.warning)(`Failed to cache VS Code CLI executable: ${err}`);
     }
     (0, import_core.info)("Starting VS Code tunnel...");
     const tunnelArgs = [
