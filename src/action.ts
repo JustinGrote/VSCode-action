@@ -151,6 +151,7 @@ async function main() {
       stdio: 'inherit'
     };
 
+    info(`Starting: ${codeExe} ${tunnelArgs.join(' ')}`);
     const child = spawn(codeExe, tunnelArgs, options);
 
     info('VS Code tunnel started (foreground)');

@@ -6,7 +6,7 @@ inputs:
   tunnel-name:
     description: "Name for the tunnel"
     required: false
-    default: "gha-debug"
+    default: "ghadebug"
   keep-alive-duration:
     description: "How long to keep the tunnel alive in seconds"
     required: false
@@ -19,3 +19,4 @@ outputs:
 runs:
   using: "node20"
   main: "dist/action.js"
+
