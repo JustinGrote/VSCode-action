@@ -1,11 +1,11 @@
-import { getInput, info, warning, setFailed } from '@actions/core';
-import { exec } from '@actions/exec';
-import { downloadTool, extractZip, extractTar, cacheFile } from '@actions/tool-cache';
-import { existsSync, mkdirSync, chmodSync } from 'node:fs';
-import { platform, arch, homedir } from 'node:os';
+import { getInput, info, setFailed, warning } from '@actions/core';
+import { cacheFile, downloadTool, extractTar, extractZip, find } from '@actions/tool-cache';
+import { spawn, SpawnOptions } from 'node:child_process';
+import { chmodSync, existsSync, mkdirSync } from 'node:fs';
+import https from 'node:https';
+import { arch, homedir, platform } from 'node:os';
 import { join } from 'node:path';
 import { exit } from 'node:process';
-import { spawn, SpawnOptions } from 'node:child_process';
 
 async function main() {
   try {
@@ -18,7 +18,7 @@ async function main() {
     const runnerPlatform = platform();
     const runnerArch = arch();
     let downloadUrl = '';
-    let fileName = '';
+    let downloadFileName = '';
     let extractPath = '';
 
     // Check if architecture is supported
@@ -29,17 +29,17 @@ async function main() {
     switch (runnerPlatform) {
       case 'linux':
         downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64';
-        fileName = 'code-cli.tar.gz';
+        downloadFileName = 'code-cli.tar.gz';
         extractPath = join(homedir(), 'vscode-cli');
         break;
       case 'darwin':
         downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=cli-darwin-x64';
-        fileName = 'code-cli.zip';
+        downloadFileName = 'code-cli.zip';
         extractPath = join(homedir(), 'vscode-cli');
         break;
       case 'win32':
         downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=cli-win32-x64';
-        fileName = 'code-cli.zip';
+        downloadFileName = 'code-cli.zip';
         extractPath = join(homedir(), 'vscode-cli');
         break;
       default:
@@ -49,88 +49,106 @@ async function main() {
     info(`Platform: ${runnerPlatform}, Architecture: ${runnerArch}`);
     info(`Download URL: ${downloadUrl}`);
 
+    // Try to get stable release version and check tool cache first
+    async function fetchStableReleaseVersion(url: string): Promise<string> {
+      return new Promise((resolve) => {
+        try {
+          https.get(url, (res) => {
+            const chunks: Buffer[] = [];
+            res.on('data', (d) => chunks.push(d));
+            res.on('end', () => {
+              try {
+                const body = Buffer.concat(chunks).toString();
+                let parsed: any = null;
+                try {
+                  parsed = JSON.parse(body);
+                } catch {
+                  // not JSON, use raw body
+                  resolve(body.trim());
+                  return;
+                }
+
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  const first = parsed[0];
+                  resolve((first && (first.version || first.name || String(first))) || '');
+                } else if (typeof parsed === 'object' && parsed !== null) {
+                  resolve((parsed.version || parsed.name || '') as string);
+                } else if (typeof parsed === 'string') {
+                  resolve(parsed);
+                } else {
+                  resolve('');
+                }
+              } catch (e) {
+                resolve('');
+              }
+            });
+          }).on('error', () => resolve(''));
+        } catch (e) {
+          resolve('');
+        }
+      });
+    }
+
+    const releasesApi = 'https://update.code.visualstudio.com/api/releases/stable';
+    info('Checking stable releases API for version...');
+    const stableVersion = await fetchStableReleaseVersion(releasesApi);
+    if (!stableVersion) {
+      throw new Error(`Failed to determine stable VS Code version from ${releasesApi}`);
+    }
+
+    info(`Stable VS Code version: ${stableVersion}`);
+
     // Create extraction directory
     if (!existsSync(extractPath)) {
       mkdirSync(extractPath, { recursive: true });
     }
 
-    // Download VS Code CLI
-    info('Downloading VS Code CLI...');
-    const downloadPath = await downloadTool(downloadUrl, join(extractPath, fileName));
-    info(`Downloaded to: ${downloadPath}`);
-
-    // Extract based on platform
-    info('Extracting VS Code CLI...');
-
-    if (runnerPlatform === 'win32') {
-      await extractZip(downloadPath, extractPath);
-    } else if (runnerPlatform === 'darwin' || runnerPlatform === 'linux') {
-      if (runnerPlatform === 'darwin') {
-        await extractZip(downloadPath, extractPath);
+    // If we were able to determine a stable version, check the tool cache
+    let cliPath = '';
+    try {
+      info('Checking runner tool cache for cached VS Code CLI...');
+      const found = find('vscode', stableVersion);
+      if (found) {
+        cliPath = found;
+        info(`Found cached VS Code CLI ${stableVersion} in tool cache: ${cliPath}`);
       } else {
-        await extractTar(downloadPath, extractPath);
+        info('No cached VS Code CLI found for this version/arch.');
       }
+    } catch (err) {
+      warning(`Tool cache check failed: ${err}`);
     }
 
-    // Make code executable on Unix
-    if (runnerPlatform !== 'win32') {
-
-    }
-
-    // Determine path to `code` executable and get version
-    info('Getting VS Code CLI version...');
-    let codeExe = '';
-    if (runnerPlatform === 'win32') {
-      codeExe = join(extractPath, 'code.exe');
-    } else {
-      codeExe = join(extractPath, 'code');
-
-      info('Making code CLI executable...');
-      chmodSync(codeExe, '755');
-    }
-
-    // Capture stdout from --version
-    async function getCodeVersion(exePath: string): Promise<string> {
-      try {
-        let output = '';
-        const options = {
-          listeners: {
-            stdout: (data: Buffer) => {
-              output += data.toString();
-            }
-          }
-        } as any;
-        await exec(exePath, ['--version'], options);
-        const firstLine = output.split(/\r?\n/)[0]?.trim() || 'unknown';
-        return firstLine;
-      } catch (err) {
-        warning(`Failed to get version: ${err}`);
-        return 'unknown';
+    if (!cliPath) {
+      const cliName = runnerPlatform === 'win32' ? 'code.exe' : 'code';
+      info('Downloading VS Code CLI...');
+      const downloadPath = await downloadTool(downloadUrl, join(extractPath, downloadFileName));
+      info(`Downloaded to: ${downloadPath}`);
+      info('Extracting VS Code CLI...');
+      if (runnerPlatform === 'win32') {
+        extractPath = await extractZip(downloadPath, extractPath);
+      } else {
+        extractPath = await extractTar(downloadPath, extractPath);
       }
+
+      if (runnerPlatform !== 'win32') {
+        info('Making code CLI executable...');
+        chmodSync(cliPath, '755');
+      }
+
+      info('Caching VS Code CLI...');
+      cliPath = await cacheFile(cliPath, cliName, 'vscode-cli', stableVersion);
+      info(`Cached VS Code CLI to: ${cliPath}`);
     }
 
-    const version = await getCodeVersion(codeExe);
-    info(`Detected VS Code CLI version: ${version}`);
+    if (!cliPath) {
+      throw new Error('Failed to download and extract VS Code CLI');
+    }
 
     // Create CLI data directory
-    let cliDataDir = '';
-    if (runnerPlatform === 'win32') {
-      cliDataDir = join('C:\\', 'vscode-cli-data');
-    } else {
-      cliDataDir = join(homedir(), 'vscode-cli-data');
-    }
+    let cliDataDir = join(homedir(), 'vscode-cli-data');
 
     if (!existsSync(cliDataDir)) {
       mkdirSync(cliDataDir, { recursive: true });
-    }
-
-    // Cache just the `code` executable to the runner tool cache for reuse
-    try {
-      info('Caching VS Code CLI executable to tool cache...');
-      const cachedFile = await cacheFile(codeExe, 'vscode', version, runnerArch);
-      info(`VS Code CLI executable cached at: ${cachedFile}`);
-    } catch (err) {
-      warning(`Failed to cache VS Code CLI executable: ${err}`);
     }
 
     // Start tunnel
@@ -151,8 +169,8 @@ async function main() {
       stdio: 'inherit'
     };
 
-    info(`Starting: ${codeExe} ${tunnelArgs.join(' ')}`);
-    const child = spawn(codeExe, tunnelArgs, options);
+    info(`Starting: ${cliPath} ${tunnelArgs.join(' ')}`);
+    const child = spawn(cliPath, tunnelArgs, options);
 
     info('VS Code tunnel started (foreground)');
     info(`Keeping tunnel alive for ${keepAliveDuration} seconds`);

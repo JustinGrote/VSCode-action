@@ -297,7 +297,7 @@ var require_tunnel = __commonJS({
     var net = require("net");
     var tls = require("tls");
     var http = require("http");
-    var https = require("https");
+    var https2 = require("https");
     var events = require("events");
     var assert = require("assert");
     var util = require("util");
@@ -319,12 +319,12 @@ var require_tunnel = __commonJS({
     }
     function httpOverHttps(options) {
       var agent = new TunnelingAgent(options);
-      agent.request = https.request;
+      agent.request = https2.request;
       return agent;
     }
     function httpsOverHttps(options) {
       var agent = new TunnelingAgent(options);
-      agent.request = https.request;
+      agent.request = https2.request;
       agent.createSocket = createSecureSocket;
       agent.defaultPort = 443;
       return agent;
@@ -17345,7 +17345,7 @@ var require_lib = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.HttpClient = exports2.isHttps = exports2.HttpClientResponse = exports2.HttpClientError = exports2.getProxyUrl = exports2.MediaTypes = exports2.Headers = exports2.HttpCodes = void 0;
     var http = __importStar(require("http"));
-    var https = __importStar(require("https"));
+    var https2 = __importStar(require("https"));
     var pm = __importStar(require_proxy());
     var tunnel = __importStar(require_tunnel2());
     var undici_1 = require_undici();
@@ -17736,7 +17736,7 @@ var require_lib = __commonJS({
         const info2 = {};
         info2.parsedUrl = requestUrl;
         const usingSsl = info2.parsedUrl.protocol === "https:";
-        info2.httpModule = usingSsl ? https : http;
+        info2.httpModule = usingSsl ? https2 : http;
         const defaultPort = usingSsl ? 443 : 80;
         info2.options = {};
         info2.options.host = info2.parsedUrl.hostname;
@@ -17806,7 +17806,7 @@ var require_lib = __commonJS({
         }
         if (!agent) {
           const options = { keepAlive: this._keepAlive, maxSockets };
-          agent = usingSsl ? new https.Agent(options) : new http.Agent(options);
+          agent = usingSsl ? new https2.Agent(options) : new http.Agent(options);
           this._agent = agent;
         }
         if (usingSsl && this._ignoreSslError) {
@@ -19411,7 +19411,7 @@ var require_exec = __commonJS({
     exports2.getExecOutput = exports2.exec = void 0;
     var string_decoder_1 = require("string_decoder");
     var tr = __importStar(require_toolrunner());
-    function exec2(commandLine, args, options) {
+    function exec(commandLine, args, options) {
       return __awaiter(this, void 0, void 0, function* () {
         const commandArgs = tr.argStringToArray(commandLine);
         if (commandArgs.length === 0) {
@@ -19423,7 +19423,7 @@ var require_exec = __commonJS({
         return runner.exec();
       });
     }
-    exports2.exec = exec2;
+    exports2.exec = exec;
     function getExecOutput(commandLine, args, options) {
       var _a, _b;
       return __awaiter(this, void 0, void 0, function* () {
@@ -19446,7 +19446,7 @@ var require_exec = __commonJS({
           }
         };
         const listeners = Object.assign(Object.assign({}, options === null || options === void 0 ? void 0 : options.listeners), { stdout: stdOutListener, stderr: stdErrListener });
-        const exitCode = yield exec2(commandLine, args, Object.assign(Object.assign({}, options), { listeners }));
+        const exitCode = yield exec(commandLine, args, Object.assign(Object.assign({}, options), { listeners }));
         stdout += stdoutDecoder.end();
         stderr += stderrDecoder.end();
         return {
@@ -19524,12 +19524,12 @@ var require_platform = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.getDetails = exports2.isLinux = exports2.isMacOS = exports2.isWindows = exports2.arch = exports2.platform = void 0;
     var os_1 = __importDefault(require("os"));
-    var exec2 = __importStar(require_exec());
+    var exec = __importStar(require_exec());
     var getWindowsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
-      const { stdout: version } = yield exec2.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Version"', void 0, {
+      const { stdout: version } = yield exec.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Version"', void 0, {
         silent: true
       });
-      const { stdout: name } = yield exec2.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Caption"', void 0, {
+      const { stdout: name } = yield exec.getExecOutput('powershell -command "(Get-CimInstance -ClassName Win32_OperatingSystem).Caption"', void 0, {
         silent: true
       });
       return {
@@ -19539,7 +19539,7 @@ var require_platform = __commonJS({
     });
     var getMacOsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
       var _a, _b, _c, _d;
-      const { stdout } = yield exec2.getExecOutput("sw_vers", void 0, {
+      const { stdout } = yield exec.getExecOutput("sw_vers", void 0, {
         silent: true
       });
       const version = (_b = (_a = stdout.match(/ProductVersion:\s*(.+)/)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : "";
@@ -19550,7 +19550,7 @@ var require_platform = __commonJS({
       };
     });
     var getLinuxInfo = () => __awaiter(void 0, void 0, void 0, function* () {
-      const { stdout } = yield exec2.getExecOutput("lsb_release", ["-i", "-r", "-s"], {
+      const { stdout } = yield exec.getExecOutput("lsb_release", ["-i", "-r", "-s"], {
         silent: true
       });
       const [name, version] = stdout.trim().split("\n");
@@ -21586,7 +21586,7 @@ var require_tool_cache = __commonJS({
       });
     }
     exports2.cacheFile = cacheFile2;
-    function find(toolName, versionSpec, arch2) {
+    function find2(toolName, versionSpec, arch2) {
       if (!toolName) {
         throw new Error("toolName parameter is required");
       }
@@ -21613,7 +21613,7 @@ var require_tool_cache = __commonJS({
       }
       return toolPath;
     }
-    exports2.find = find;
+    exports2.find = find2;
     function findAllVersions(toolName, arch2) {
       const versions = [];
       arch2 = arch2 || os.arch();
@@ -21755,13 +21755,13 @@ var require_tool_cache = __commonJS({
 
 // src/action.ts
 var import_core = __toESM(require_core());
-var import_exec = __toESM(require_exec());
 var import_tool_cache = __toESM(require_tool_cache());
+var import_node_child_process = require("node:child_process");
 var import_node_fs = require("node:fs");
+var import_node_https = __toESM(require("node:https"));
 var import_node_os = require("node:os");
 var import_node_path = require("node:path");
 var import_node_process = require("node:process");
-var import_node_child_process = require("node:child_process");
 async function main() {
   try {
     const tunnelName = (0, import_core.getInput)("tunnel-name");
@@ -21770,7 +21770,7 @@ async function main() {
     const runnerPlatform = (0, import_node_os.platform)();
     const runnerArch = (0, import_node_os.arch)();
     let downloadUrl = "";
-    let fileName = "";
+    let downloadFileName = "";
     let extractPath = "";
     if (runnerArch !== "x64") {
       throw new Error(`Unsupported architecture: ${runnerArch}. Only x64 is supported yet.`);
@@ -21778,17 +21778,17 @@ async function main() {
     switch (runnerPlatform) {
       case "linux":
         downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64";
-        fileName = "code-cli.tar.gz";
+        downloadFileName = "code-cli.tar.gz";
         extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
         break;
       case "darwin":
         downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-darwin-x64";
-        fileName = "code-cli.zip";
+        downloadFileName = "code-cli.zip";
         extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
         break;
       case "win32":
         downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-win32-x64";
-        fileName = "code-cli.zip";
+        downloadFileName = "code-cli.zip";
         extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
         break;
       default:
@@ -21796,68 +21796,90 @@ async function main() {
     }
     (0, import_core.info)(`Platform: ${runnerPlatform}, Architecture: ${runnerArch}`);
     (0, import_core.info)(`Download URL: ${downloadUrl}`);
+    async function fetchStableReleaseVersion(url) {
+      return new Promise((resolve) => {
+        try {
+          import_node_https.default.get(url, (res) => {
+            const chunks = [];
+            res.on("data", (d) => chunks.push(d));
+            res.on("end", () => {
+              try {
+                const body = Buffer.concat(chunks).toString();
+                let parsed = null;
+                try {
+                  parsed = JSON.parse(body);
+                } catch {
+                  resolve(body.trim());
+                  return;
+                }
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  const first = parsed[0];
+                  resolve(first && (first.version || first.name || String(first)) || "");
+                } else if (typeof parsed === "object" && parsed !== null) {
+                  resolve(parsed.version || parsed.name || "");
+                } else if (typeof parsed === "string") {
+                  resolve(parsed);
+                } else {
+                  resolve("");
+                }
+              } catch (e) {
+                resolve("");
+              }
+            });
+          }).on("error", () => resolve(""));
+        } catch (e) {
+          resolve("");
+        }
+      });
+    }
+    const releasesApi = "https://update.code.visualstudio.com/api/releases/stable";
+    (0, import_core.info)("Checking stable releases API for version...");
+    const stableVersion = await fetchStableReleaseVersion(releasesApi);
+    if (!stableVersion) {
+      throw new Error(`Failed to determine stable VS Code version from ${releasesApi}`);
+    }
+    (0, import_core.info)(`Stable VS Code version: ${stableVersion}`);
     if (!(0, import_node_fs.existsSync)(extractPath)) {
       (0, import_node_fs.mkdirSync)(extractPath, { recursive: true });
     }
-    (0, import_core.info)("Downloading VS Code CLI...");
-    const downloadPath = await (0, import_tool_cache.downloadTool)(downloadUrl, (0, import_node_path.join)(extractPath, fileName));
-    (0, import_core.info)(`Downloaded to: ${downloadPath}`);
-    (0, import_core.info)("Extracting VS Code CLI...");
-    if (runnerPlatform === "win32") {
-      await (0, import_tool_cache.extractZip)(downloadPath, extractPath);
-    } else if (runnerPlatform === "darwin" || runnerPlatform === "linux") {
-      if (runnerPlatform === "darwin") {
-        await (0, import_tool_cache.extractZip)(downloadPath, extractPath);
+    let cliPath = "";
+    try {
+      (0, import_core.info)("Checking runner tool cache for cached VS Code CLI...");
+      const found = (0, import_tool_cache.find)("vscode", stableVersion);
+      if (found) {
+        cliPath = found;
+        (0, import_core.info)(`Found cached VS Code CLI ${stableVersion} in tool cache: ${cliPath}`);
       } else {
-        await (0, import_tool_cache.extractTar)(downloadPath, extractPath);
+        (0, import_core.info)("No cached VS Code CLI found for this version/arch.");
       }
+    } catch (err) {
+      (0, import_core.warning)(`Tool cache check failed: ${err}`);
     }
-    if (runnerPlatform !== "win32") {
-    }
-    (0, import_core.info)("Getting VS Code CLI version...");
-    let codeExe = "";
-    if (runnerPlatform === "win32") {
-      codeExe = (0, import_node_path.join)(extractPath, "code.exe");
-    } else {
-      codeExe = (0, import_node_path.join)(extractPath, "code");
-      (0, import_core.info)("Making code CLI executable...");
-      (0, import_node_fs.chmodSync)(codeExe, "755");
-    }
-    async function getCodeVersion(exePath) {
-      try {
-        let output = "";
-        const options2 = {
-          listeners: {
-            stdout: (data) => {
-              output += data.toString();
-            }
-          }
-        };
-        await (0, import_exec.exec)(exePath, ["--version"], options2);
-        const firstLine = output.split(/\r?\n/)[0]?.trim() || "unknown";
-        return firstLine;
-      } catch (err) {
-        (0, import_core.warning)(`Failed to get version: ${err}`);
-        return "unknown";
+    if (!cliPath) {
+      const cliName = runnerPlatform === "win32" ? "code.exe" : "code";
+      (0, import_core.info)("Downloading VS Code CLI...");
+      const downloadPath = await (0, import_tool_cache.downloadTool)(downloadUrl, (0, import_node_path.join)(extractPath, downloadFileName));
+      (0, import_core.info)(`Downloaded to: ${downloadPath}`);
+      (0, import_core.info)("Extracting VS Code CLI...");
+      if (runnerPlatform === "win32") {
+        extractPath = await (0, import_tool_cache.extractZip)(downloadPath, extractPath);
+      } else {
+        extractPath = await (0, import_tool_cache.extractTar)(downloadPath, extractPath);
       }
+      if (runnerPlatform !== "win32") {
+        (0, import_core.info)("Making code CLI executable...");
+        (0, import_node_fs.chmodSync)(cliPath, "755");
+      }
+      (0, import_core.info)("Caching VS Code CLI...");
+      cliPath = await (0, import_tool_cache.cacheFile)(cliPath, cliName, "vscode-cli", stableVersion);
+      (0, import_core.info)(`Cached VS Code CLI to: ${cliPath}`);
     }
-    const version = await getCodeVersion(codeExe);
-    (0, import_core.info)(`Detected VS Code CLI version: ${version}`);
-    let cliDataDir = "";
-    if (runnerPlatform === "win32") {
-      cliDataDir = (0, import_node_path.join)("C:\\", "vscode-cli-data");
-    } else {
-      cliDataDir = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli-data");
+    if (!cliPath) {
+      throw new Error("Failed to download and extract VS Code CLI");
     }
+    let cliDataDir = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli-data");
     if (!(0, import_node_fs.existsSync)(cliDataDir)) {
       (0, import_node_fs.mkdirSync)(cliDataDir, { recursive: true });
-    }
-    try {
-      (0, import_core.info)("Caching VS Code CLI executable to tool cache...");
-      const cachedFile = await (0, import_tool_cache.cacheFile)(codeExe, "vscode", version, runnerArch);
-      (0, import_core.info)(`VS Code CLI executable cached at: ${cachedFile}`);
-    } catch (err) {
-      (0, import_core.warning)(`Failed to cache VS Code CLI executable: ${err}`);
     }
     (0, import_core.info)("Starting VS Code tunnel...");
     const tunnelArgs = [
@@ -21872,7 +21894,8 @@ async function main() {
     const options = {
       stdio: "inherit"
     };
-    const child = (0, import_node_child_process.spawn)(codeExe, tunnelArgs, options);
+    (0, import_core.info)(`Starting: ${cliPath} ${tunnelArgs.join(" ")}`);
+    const child = (0, import_node_child_process.spawn)(cliPath, tunnelArgs, options);
     (0, import_core.info)("VS Code tunnel started (foreground)");
     (0, import_core.info)(`Keeping tunnel alive for ${keepAliveDuration} seconds`);
     await new Promise((resolve, reject) => {
