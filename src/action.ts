@@ -10,6 +10,11 @@ import { exit } from 'node:process';
 async function main() {
   try {
     const tunnelName = getInput('tunnel-name');
+    // validate tunnel name length
+    if (tunnelName && tunnelName.trim().length > 20) {
+      throw new Error('Tunnel name must be 20 characters or fewer.');
+    }
+
     const keepAliveDuration = parseInt(getInput('keep-alive-duration'), 10);
 
     info(`Starting VS Code Tunnel: ${tunnelName}`);

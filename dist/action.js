@@ -21765,6 +21765,9 @@ var import_node_process = require("node:process");
 async function main() {
   try {
     const tunnelName = (0, import_core.getInput)("tunnel-name");
+    if (tunnelName && tunnelName.trim().length > 20) {
+      throw new Error("Tunnel name must be 20 characters or fewer.");
+    }
     const keepAliveDuration = parseInt((0, import_core.getInput)("keep-alive-duration"), 10);
     (0, import_core.info)(`Starting VS Code Tunnel: ${tunnelName}`);
     const runnerPlatform = (0, import_node_os.platform)();
