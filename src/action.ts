@@ -21,19 +21,24 @@ async function main() {
     let fileName = '';
     let extractPath = '';
 
+    // Check if architecture is supported
+    if (runnerArch !== 'x64') {
+      throw new Error(`Unsupported architecture: ${runnerArch}. Only x64 is supported yet.`);
+    }
+
     switch (runnerPlatform) {
       case 'linux':
-        downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=linux-x64';
+        downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=cli-linux-x64';
         fileName = 'code-cli.tar.gz';
         extractPath = join(homedir(), 'vscode-cli');
         break;
       case 'darwin':
-        downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=darwin-x64';
+        downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=cli-darwin-x64';
         fileName = 'code-cli.zip';
         extractPath = join(homedir(), 'vscode-cli');
         break;
       case 'win32':
-        downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=win32-x64';
+        downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=cli-win32-x64';
         fileName = 'code-cli.zip';
         extractPath = join(homedir(), 'vscode-cli');
         break;
@@ -56,6 +61,7 @@ async function main() {
 
     // Extract based on platform
     info('Extracting VS Code CLI...');
+
     if (runnerPlatform === 'win32') {
       await extractZip(downloadPath, extractPath);
     } else if (runnerPlatform === 'darwin' || runnerPlatform === 'linux') {
@@ -68,9 +74,7 @@ async function main() {
 
     // Make code executable on Unix
     if (runnerPlatform !== 'win32') {
-      info('Making code CLI executable...');
-      const codePath = join(extractPath, 'code');
-      chmodSync(codePath, '755');
+
     }
 
     // Determine path to `code` executable and get version
@@ -80,6 +84,9 @@ async function main() {
       codeExe = join(extractPath, 'code.exe');
     } else {
       codeExe = join(extractPath, 'code');
+
+      info('Making code CLI executable...');
+      chmodSync(codeExe, '755');
     }
 
     // Capture stdout from --version

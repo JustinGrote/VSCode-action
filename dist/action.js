@@ -21772,19 +21772,22 @@ async function main() {
     let downloadUrl = "";
     let fileName = "";
     let extractPath = "";
+    if (runnerArch !== "x64") {
+      throw new Error(`Unsupported architecture: ${runnerArch}. Only x64 is supported yet.`);
+    }
     switch (runnerPlatform) {
       case "linux":
-        downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=linux-x64";
+        downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-linux-x64";
         fileName = "code-cli.tar.gz";
         extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
         break;
       case "darwin":
-        downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=darwin-x64";
+        downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-darwin-x64";
         fileName = "code-cli.zip";
         extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
         break;
       case "win32":
-        downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64";
+        downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-win32-x64";
         fileName = "code-cli.zip";
         extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
         break;
@@ -21810,9 +21813,6 @@ async function main() {
       }
     }
     if (runnerPlatform !== "win32") {
-      (0, import_core.info)("Making code CLI executable...");
-      const codePath = (0, import_node_path.join)(extractPath, "code");
-      (0, import_node_fs.chmodSync)(codePath, "755");
     }
     (0, import_core.info)("Getting VS Code CLI version...");
     let codeExe = "";
@@ -21820,6 +21820,8 @@ async function main() {
       codeExe = (0, import_node_path.join)(extractPath, "code.exe");
     } else {
       codeExe = (0, import_node_path.join)(extractPath, "code");
+      (0, import_core.info)("Making code CLI executable...");
+      (0, import_node_fs.chmodSync)(codeExe, "755");
     }
     async function getCodeVersion(exePath) {
       try {
