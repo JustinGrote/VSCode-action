@@ -21754,9 +21754,9 @@ var require_tool_cache = __commonJS({
 });
 
 // src/action.ts
-var import_core = __toESM(require_core(), 1);
-var import_exec = __toESM(require_exec(), 1);
-var import_tool_cache = __toESM(require_tool_cache(), 1);
+var import_core = __toESM(require_core());
+var import_exec = __toESM(require_exec());
+var import_tool_cache = __toESM(require_tool_cache());
 var import_node_fs = require("node:fs");
 var import_node_os = require("node:os");
 var import_node_path = require("node:path");
