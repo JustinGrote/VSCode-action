@@ -6,7 +6,7 @@ inputs:
   tunnel-name:
     description: "Name for the tunnel"
     required: false
-    default: "github-actions-tunnel"
+    default: "gha-debug"
   keep-alive-duration:
     description: "How long to keep the tunnel alive in seconds"
     required: false
