@@ -1,0 +1,21 @@
+name: "VS Code Tunnel"
+description: "Download VS Code CLI and start a code tunnel"
+author: "GitHub"
+
+inputs:
+  tunnel-name:
+    description: "Name for the tunnel"
+    required: false
+    default: "github-actions-tunnel"
+  keep-alive-duration:
+    description: "How long to keep the tunnel alive in seconds"
+    required: false
+    default: "3600"
+
+outputs:
+  tunnel-url:
+    description: "The URL for accessing the tunnel"
+
+runs:
+  using: "node20"
+  main: "dist/action.mjs"

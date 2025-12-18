@@ -1,0 +1,29 @@
+{
+  "name": "vscode-tunnel-action",
+  "version": "1.0.0",
+  "description": "GitHub Action to download VS Code CLI and start a code tunnel",
+  "main": "dist/action.mjs",
+  "type": "module",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "build": "esbuild src/action.ts --bundle --platform=node --target=node20 --outfile=dist/action.mjs",
+    "prepare": "pnpm run build"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "@actions/exec": "^1.1.1",
+    "@actions/tool-cache": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "esbuild": "^0.27.2",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "github-actions",
+    "vscode",
+    "tunnel",
+    "remote",
+    "cli"
+  ]
+}

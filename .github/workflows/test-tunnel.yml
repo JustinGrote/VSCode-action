@@ -1,0 +1,34 @@
+name: Test Tunnel
+
+on:
+  workflow_dispatch:
+    inputs:
+      tunnel-name:
+        description: "Name for the tunnel"
+        required: false
+        default: "github-actions-tunnel"
+      keep-alive-duration:
+        description: "Keep-alive duration in seconds"
+        required: false
+        default: "600"
+
+jobs:
+  tunnel:
+    name: Start VS Code Tunnel
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start Tunnel
+        id: start
+        uses: ./
+        with:
+          tunnel-name: ${{ github.event.inputs['tunnel-name'] }}
+          keep-alive-duration: ${{ github.event.inputs['keep-alive-duration'] }}
+
+      - name: Show Tunnel URL
+        run: |
+          echo "Tunnel URL: ${{ steps.start.outputs.tunnel-url }}"
+          echo "### VS Code Tunnel" >> $GITHUB_STEP_SUMMARY
+          echo "URL: ${{ steps.start.outputs.tunnel-url }}" >> $GITHUB_STEP_SUMMARY

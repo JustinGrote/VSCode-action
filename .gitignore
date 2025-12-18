@@ -1,0 +1,27 @@
+# pnpm
+pnpm-lock.yaml
+
+# Node
+node_modules/
+.npmrc
+
+# Build
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
