@@ -21777,7 +21777,7 @@ async function main() {
     }
     switch (runnerPlatform) {
       case "linux":
-        downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-linux-x64";
+        downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64";
         fileName = "code-cli.tar.gz";
         extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
         break;
