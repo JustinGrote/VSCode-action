@@ -5,9 +5,6 @@ pnpm-lock.yaml
 node_modules/
 .npmrc
 
-# Build
-dist/
-
 # Logs
 *.log
 npm-debug.log*
