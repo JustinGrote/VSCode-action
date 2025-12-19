@@ -1,16 +1,7 @@
-name: Test Tunnel
+name: Test VS Code Tunnel Action
 
 on:
   workflow_dispatch:
-    inputs:
-      tunnel-name:
-        description: "Name for the tunnel"
-        required: false
-        default: "github-actions-tunnel"
-      keep-alive-duration:
-        description: "Keep-alive duration in seconds"
-        required: false
-        default: "600"
 
 jobs:
   tunnel:
@@ -19,15 +10,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Start Tunnel
         id: start
         uses: ./
-        with:
-          tunnel-name: ${{ github.event.inputs['tunnel-name'] }}
-          keep-alive-duration: ${{ github.event.inputs['keep-alive-duration'] }}
-
-      - name: Setup upterm session
+      - name: Upterm SSH on Failure
         if: failure()
         uses: owenthereal/action-upterm@v1
         with:

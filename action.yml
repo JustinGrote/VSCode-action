@@ -6,12 +6,14 @@ inputs:
   tunnel-name:
     description: "Name for the tunnel"
     required: false
-    default: "ghadebug"
-  keep-alive-duration:
-    description: "How long to keep the tunnel alive in seconds"
+  connection-timeout:
+    description: "Connection timeout in minutes (default 5). If no connection is detected within this period the action will terminate the tunnel."
     required: false
-    default: "3600"
-
+    default: "5"
+  session-timeout:
+    description: "Session timeout in minutes (default 60). Starts after a connection is detected and will terminate the tunnel when reached."
+    required: false
+    default: "60"
 outputs:
   tunnel-url:
     description: "The URL for accessing the tunnel"

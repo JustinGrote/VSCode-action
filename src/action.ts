@@ -1,4 +1,4 @@
-import { getInput, info, setFailed, warning } from '@actions/core';
+import { debug, getInput, info, setFailed, warning, error } from '@actions/core';
 import { cacheFile, downloadTool, extractTar, extractZip, find } from '@actions/tool-cache';
 import { spawn, SpawnOptions } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync } from 'node:fs';
@@ -9,15 +9,53 @@ import { exit } from 'node:process';
 
 async function main() {
   try {
-    const tunnelName = getInput('tunnel-name');
-    // validate tunnel name length
-    if (tunnelName && tunnelName.trim().length > 20) {
-      throw new Error('Tunnel name must be 20 characters or fewer.');
+    let tunnelName = getInput('tunnel-name');
+
+    // If the input is empty, generate a name from the workflow and run id.
+    // Ensure the generated name (workflow + run id) is no longer than 20 chars.
+    if (!tunnelName || tunnelName.trim().length === 0) {
+      const workflow = (process.env.GITHUB_WORKFLOW || 'workflow').replace(/\s+/g, '-');
+      const runId = process.env.GITHUB_RUN_ID || String(Date.now());
+      const sep = '-';
+      const maxTotal = 20;
+      const maxWorkflowLen = Math.max(0, maxTotal - runId.length - sep.length);
+      let shortWorkflow = workflow;
+      if (shortWorkflow.length > maxWorkflowLen) {
+        shortWorkflow = shortWorkflow.slice(0, maxWorkflowLen);
+      }
+      shortWorkflow = shortWorkflow.replace(/-+$/g, '');
+      let generated = shortWorkflow.length > 0 ? `${shortWorkflow}${sep}${runId}` : runId.slice(0, maxTotal);
+      if (generated.length > maxTotal) {
+        generated = generated.slice(0, maxTotal);
+      }
+      tunnelName = generated;
+      debug(`Generated tunnel name: ${tunnelName}`);
+    } else {
+      // validate tunnel name length for user-supplied values
+      if (tunnelName.trim().length > 20) {
+        throw new Error('Tunnel name must be 20 characters or fewer.');
+      }
     }
 
-    const keepAliveDuration = parseInt(getInput('keep-alive-duration'), 10);
+    info(`Starting VS Code Tunnel: ${tunnelName}. Enable Debug logging to see more detail on the process.`);
 
-    info(`Starting VS Code Tunnel: ${tunnelName}`);
+    // Timeouts (in minutes) configurable via action inputs
+    const connectionTimeoutMinutes = (() => {
+      const v = getInput('connection-timeout');
+      const n = parseInt(v, 10);
+      return Number.isFinite(n) && n > 0 ? n : 5; // default 5 minutes
+    })();
+
+    const sessionTimeoutMinutes = (() => {
+      const v = getInput('session-timeout');
+      const n = parseInt(v, 10);
+      return Number.isFinite(n) && n > 0 ? n : 60; // default 60 minutes
+    })();
+
+    const connectionTimeoutMs = connectionTimeoutMinutes * 60 * 1000;
+    const sessionTimeoutMs = sessionTimeoutMinutes * 60 * 1000;
+
+    debug(`Connection timeout: ${connectionTimeoutMinutes} minutes, session timeout: ${sessionTimeoutMinutes} minutes`);
 
     // Determine platform
     const runnerPlatform = platform();
@@ -53,8 +91,8 @@ async function main() {
         throw new Error(`Unsupported platform: ${runnerPlatform}`);
     }
 
-    info(`Platform: ${runnerPlatform}, Architecture: ${runnerArch}`);
-    info(`Download URL: ${downloadUrl}`);
+    debug(`Platform: ${runnerPlatform}, Architecture: ${runnerArch}`);
+    debug(`Download URL: ${downloadUrl}`);
 
     // Try to get stable release version and check tool cache first
     async function fetchStableReleaseVersion(url: string): Promise<string> {
@@ -97,13 +135,13 @@ async function main() {
     }
 
     const releasesApi = 'https://update.code.visualstudio.com/api/releases/stable';
-    info('Checking stable releases API for version...');
+    debug('Checking stable releases API for version...');
     const stableVersion = await fetchStableReleaseVersion(releasesApi);
     if (!stableVersion) {
       throw new Error(`Failed to determine stable VS Code version from ${releasesApi}`);
     }
 
-    info(`Stable VS Code version: ${stableVersion}`);
+    debug(`Stable VS Code version: ${stableVersion}`);
 
     // Create extraction directory
     if (!existsSync(extractPath)) {
@@ -113,13 +151,13 @@ async function main() {
     // If we were able to determine a stable version, check the tool cache
     let cliPath = '';
     try {
-      info('Checking runner tool cache for cached VS Code CLI...');
+      debug('Checking runner tool cache for cached VS Code CLI...');
       const found = find(cliToolCacheName, stableVersion);
       if (found) {
         cliPath = found;
-        info(`Found cached VS Code CLI ${stableVersion} in tool cache: ${cliPath}`);
+        debug(`Found cached VS Code CLI ${stableVersion} in tool cache: ${cliPath}`);
       } else {
-        info('No cached VS Code CLI found for this version/arch.');
+        debug('No cached VS Code CLI found for this version/arch.');
       }
     } catch (err) {
       warning(`Tool cache check failed: ${err}`);
@@ -127,10 +165,10 @@ async function main() {
 
     if (!cliPath) {
       const cliName = runnerPlatform === 'win32' ? 'code.exe' : 'code';
-      info('Downloading VS Code CLI...');
+      debug('Downloading VS Code CLI...');
       const downloadPath = await downloadTool(downloadUrl, join(extractPath, downloadFileName));
-      info(`Downloaded to: ${downloadPath}`);
-      info('Extracting VS Code CLI...');
+      debug(`Downloaded to: ${downloadPath}`);
+      debug('Extracting VS Code CLI...');
       if (runnerPlatform === 'win32') {
         extractPath = await extractZip(downloadPath, extractPath);
       } else {
@@ -145,13 +183,13 @@ async function main() {
       }
 
       if (runnerPlatform !== 'win32') {
-        info(`Making ${extractCliPath} executable...`);
+        debug(`Making ${extractCliPath} executable...`);
         chmodSync(extractCliPath, 0o755);
       }
 
-      info('Caching VS Code CLI...');
+      debug('Caching VS Code CLI...');
       const cacheDir = await cacheFile(extractCliPath, cliName, cliToolCacheName, stableVersion);
-      info(`Cached VS Code CLI to: ${cacheDir}`);
+      debug(`Cached VS Code CLI to: ${cacheDir}`);
 
       cliPath = join(cacheDir, cliName);
     }
@@ -168,7 +206,7 @@ async function main() {
     }
 
     // Start tunnel
-    info('Starting VS Code tunnel...');
+    debug('Starting VS Code tunnel...');
     const tunnelArgs = [
       'tunnel',
       '--accept-server-license-terms',
@@ -180,27 +218,84 @@ async function main() {
       tunnelArgs.push('--name', tunnelName);
     }
 
-    // Start tunnel in foreground and show output
+    // Start tunnel in foreground and capture output so we can forward it
     const options: SpawnOptions = {
-      stdio: 'inherit'
+      stdio: 'pipe'
     };
 
-    info(`Starting: ${cliPath} ${tunnelArgs.join(' ')}`);
+    debug(`Starting: ${cliPath} ${tunnelArgs.join(' ')}`);
     const child = spawn(cliPath, tunnelArgs, options);
 
-    info('VS Code tunnel started (foreground)');
-    info(`Keeping tunnel alive for ${keepAliveDuration} seconds`);
+    debug('VS Code tunnel started (foreground) - capturing output');
+
+    // Track connection state and timers. If no connection is detected within
+    // `connectionTimeoutMs`, terminate. Once a connection is detected, start
+    // a session timeout of `sessionTimeoutMs` and terminate when it elapses.
+    let connected = false;
+    let connectionTimer: NodeJS.Timeout | null = null;
+    let sessionTimer: NodeJS.Timeout | null = null;
+    const connectionIndicator = '[tunnels::connections::relay_tunnel_host] Opened new client';
+
+    if (child.stdout) {
+      child.stdout.on('data', (chunk: Buffer) => {
+        const text = String(chunk);
+        const lines = text.split(/\r?\n/).filter(l => l.length > 0);
+        for (const line of lines) {
+          debug(line);
+          if (!connected && line.includes(connectionIndicator)) {
+            connected = true;
+            debug('Connection detected; switching to session timeout');
+            if (connectionTimer) { clearTimeout(connectionTimer); connectionTimer = null; }
+            sessionTimer = setTimeout(() => {
+              error(`Session timeout after ${sessionTimeoutMinutes} minutes reached; terminating tunnel`);
+              try { child.kill(); } catch (_) {}
+            }, sessionTimeoutMs);
+          }
+        }
+      });
+    }
+
+    if (child.stderr) {
+      child.stderr.on('data', (chunk: Buffer) => {
+        const text = String(chunk);
+        const lines = text.split(/\r?\n/).filter(l => l.length > 0);
+        for (const line of lines) {
+          error(line);
+        }
+      });
+    }
+
+    // Start the connection timeout
+    connectionTimer = setTimeout(() => {
+      if (!connected) {
+        error(`Connection timeout after ${connectionTimeoutMinutes} minutes reached; terminating tunnel`);
+        try { child.kill(); } catch (_) {}
+      }
+    }, connectionTimeoutMs);
 
     // Wait for the tunnel process to exit and forward its exit code
     await new Promise<void>((resolve, reject) => {
-      child.on('error', err => reject(err));
+      const cleanup = () => {
+        if (connectionTimer) { clearTimeout(connectionTimer); connectionTimer = null; }
+        if (sessionTimer) { clearTimeout(sessionTimer); sessionTimer = null; }
+      };
+
+      child.on('error', err => {
+        cleanup();
+        reject(err);
+      });
+
       child.on('close', (code) => {
+        cleanup();
         info(`VS Code tunnel exited with code ${code}`);
-        resolve();
+        if (code && code !== 0) {
+          reject(new Error(`VS Code tunnel exited with code ${code}`));
+        } else {
+          resolve();
+        }
       });
     });
 
-    info('Keep-alive duration completed');
   } catch (error) {
     setFailed(`Action failed with error: ${error instanceof Error ? error.message : String(error)}`);
     exit(1);
