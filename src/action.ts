@@ -26,6 +26,8 @@ async function main() {
     let downloadFileName = '';
     let extractPath = '';
 
+    const cliToolCacheName = 'vscode-cli';
+
     // Check if architecture is supported
     if (runnerArch !== 'x64') {
       throw new Error(`Unsupported architecture: ${runnerArch}. Only x64 is supported yet.`);
@@ -35,17 +37,17 @@ async function main() {
       case 'linux':
         downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64';
         downloadFileName = 'code-cli.tar.gz';
-        extractPath = join(homedir(), 'vscode-cli');
+        extractPath = join(homedir(), cliToolCacheName);
         break;
       case 'darwin':
         downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=cli-darwin-x64';
         downloadFileName = 'code-cli.zip';
-        extractPath = join(homedir(), 'vscode-cli');
+        extractPath = join(homedir(), cliToolCacheName);
         break;
       case 'win32':
         downloadUrl = 'https://code.visualstudio.com/sha/download?build=stable&os=cli-win32-x64';
         downloadFileName = 'code-cli.zip';
-        extractPath = join(homedir(), 'vscode-cli');
+        extractPath = join(homedir(), cliToolCacheName);
         break;
       default:
         throw new Error(`Unsupported platform: ${runnerPlatform}`);
@@ -112,7 +114,7 @@ async function main() {
     let cliPath = '';
     try {
       info('Checking runner tool cache for cached VS Code CLI...');
-      const found = find('vscode', stableVersion);
+      const found = find(cliToolCacheName, stableVersion);
       if (found) {
         cliPath = found;
         info(`Found cached VS Code CLI ${stableVersion} in tool cache: ${cliPath}`);
@@ -148,7 +150,7 @@ async function main() {
       }
 
       info('Caching VS Code CLI...');
-      const cacheDir = await cacheFile(extractCliPath, cliName, 'vscode-cli', stableVersion);
+      const cacheDir = await cacheFile(extractCliPath, cliName, cliToolCacheName, stableVersion);
       info(`Cached VS Code CLI to: ${cacheDir}`);
 
       cliPath = join(cacheDir, cliName);

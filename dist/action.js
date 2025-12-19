@@ -21775,6 +21775,7 @@ async function main() {
     let downloadUrl = "";
     let downloadFileName = "";
     let extractPath = "";
+    const cliToolCacheName = "vscode-cli";
     if (runnerArch !== "x64") {
       throw new Error(`Unsupported architecture: ${runnerArch}. Only x64 is supported yet.`);
     }
@@ -21782,17 +21783,17 @@ async function main() {
       case "linux":
         downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-alpine-x64";
         downloadFileName = "code-cli.tar.gz";
-        extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
+        extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), cliToolCacheName);
         break;
       case "darwin":
         downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-darwin-x64";
         downloadFileName = "code-cli.zip";
-        extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
+        extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), cliToolCacheName);
         break;
       case "win32":
         downloadUrl = "https://code.visualstudio.com/sha/download?build=stable&os=cli-win32-x64";
         downloadFileName = "code-cli.zip";
-        extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), "vscode-cli");
+        extractPath = (0, import_node_path.join)((0, import_node_os.homedir)(), cliToolCacheName);
         break;
       default:
         throw new Error(`Unsupported platform: ${runnerPlatform}`);
@@ -21848,7 +21849,7 @@ async function main() {
     let cliPath = "";
     try {
       (0, import_core.info)("Checking runner tool cache for cached VS Code CLI...");
-      const found = (0, import_tool_cache.find)("vscode", stableVersion);
+      const found = (0, import_tool_cache.find)(cliToolCacheName, stableVersion);
       if (found) {
         cliPath = found;
         (0, import_core.info)(`Found cached VS Code CLI ${stableVersion} in tool cache: ${cliPath}`);
@@ -21878,7 +21879,7 @@ async function main() {
         (0, import_node_fs.chmodSync)(extractCliPath, 493);
       }
       (0, import_core.info)("Caching VS Code CLI...");
-      const cacheDir = await (0, import_tool_cache.cacheFile)(extractCliPath, cliName, "vscode-cli", stableVersion);
+      const cacheDir = await (0, import_tool_cache.cacheFile)(extractCliPath, cliName, cliToolCacheName, stableVersion);
       (0, import_core.info)(`Cached VS Code CLI to: ${cacheDir}`);
       cliPath = (0, import_node_path.join)(cacheDir, cliName);
     }
