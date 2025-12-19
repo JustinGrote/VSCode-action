@@ -21869,17 +21869,18 @@ async function main() {
       } else {
         extractPath = await (0, import_tool_cache.extractTar)(downloadPath, extractPath);
       }
-      cliPath = (0, import_node_path.join)(extractPath, cliName);
-      if (!(0, import_node_fs.existsSync)(cliPath)) {
-        throw new Error(`VS Code CLI not found at expected path: ${cliPath}`);
+      const extractCliPath = (0, import_node_path.join)(extractPath, cliName);
+      if (!(0, import_node_fs.existsSync)(extractCliPath)) {
+        throw new Error(`VS Code CLI not found at expected path: ${extractCliPath}`);
       }
       if (runnerPlatform !== "win32") {
-        (0, import_core.info)(`Making ${cliPath} executable...`);
-        (0, import_node_fs.chmodSync)(cliPath, 493);
+        (0, import_core.info)(`Making ${extractCliPath} executable...`);
+        (0, import_node_fs.chmodSync)(extractCliPath, 493);
       }
       (0, import_core.info)("Caching VS Code CLI...");
-      cliPath = await (0, import_tool_cache.cacheFile)(cliPath, cliName, "vscode-cli", stableVersion);
-      (0, import_core.info)(`Cached VS Code CLI to: ${cliPath}`);
+      const cacheDir = await (0, import_tool_cache.cacheFile)(extractCliPath, cliName, "vscode-cli", stableVersion);
+      (0, import_core.info)(`Cached VS Code CLI to: ${cacheDir}`);
+      cliPath = (0, import_node_path.join)(cacheDir, cliName);
     }
     if (!cliPath) {
       throw new Error("Failed to download and extract VS Code CLI");
