@@ -135,9 +135,16 @@ async function main() {
         extractPath = await extractTar(downloadPath, extractPath);
       }
 
+      cliPath = join(extractPath, cliName);
+
+      // Verify the CLI binary exists before attempting to use it
+      if (!existsSync(cliPath)) {
+        throw new Error(`VS Code CLI not found at expected path: ${cliPath}`);
+      }
+
       if (runnerPlatform !== 'win32') {
-        info('Making code CLI executable...');
-        chmodSync(cliPath, '755');
+        info(`Making ${cliPath} executable...`);
+        chmodSync(cliPath, 0o755);
       }
 
       info('Caching VS Code CLI...');
