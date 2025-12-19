@@ -21869,9 +21869,13 @@ async function main() {
       } else {
         extractPath = await (0, import_tool_cache.extractTar)(downloadPath, extractPath);
       }
+      cliPath = (0, import_node_path.join)(extractPath, cliName);
+      if (!(0, import_node_fs.existsSync)(cliPath)) {
+        throw new Error(`VS Code CLI not found at expected path: ${cliPath}`);
+      }
       if (runnerPlatform !== "win32") {
-        (0, import_core.info)("Making code CLI executable...");
-        (0, import_node_fs.chmodSync)(cliPath, "755");
+        (0, import_core.info)(`Making ${cliPath} executable...`);
+        (0, import_node_fs.chmodSync)(cliPath, 493);
       }
       (0, import_core.info)("Caching VS Code CLI...");
       cliPath = await (0, import_tool_cache.cacheFile)(cliPath, cliName, "vscode-cli", stableVersion);
