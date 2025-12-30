@@ -11,31 +11,6 @@ async function main() {
   try {
     let tunnelName = getInput('tunnel-name');
 
-    // If the input is empty, generate a name from the workflow and run id.
-    // Ensure the generated name (workflow + run id) is no longer than 20 chars.
-    if (!tunnelName || tunnelName.trim().length === 0) {
-      const workflow = (process.env.GITHUB_WORKFLOW || 'workflow').replace(/\s+/g, '-');
-      const runId = process.env.GITHUB_RUN_ID || String(Date.now());
-      const sep = '-';
-      const maxTotal = 20;
-      const maxWorkflowLen = Math.max(0, maxTotal - runId.length - sep.length);
-      let shortWorkflow = workflow;
-      if (shortWorkflow.length > maxWorkflowLen) {
-        shortWorkflow = shortWorkflow.slice(0, maxWorkflowLen);
-      }
-      shortWorkflow = shortWorkflow.replace(/-+$/g, '');
-      let generated = shortWorkflow.length > 0 ? `${shortWorkflow}${sep}${runId}` : runId.slice(0, maxTotal);
-      if (generated.length > maxTotal) {
-        generated = generated.slice(0, maxTotal);
-      }
-      tunnelName = generated;
-      debug(`Generated tunnel name: ${tunnelName}`);
-    } else {
-      // validate tunnel name length for user-supplied values
-      if (tunnelName.trim().length > 20) {
-        throw new Error('Tunnel name must be 20 characters or fewer.');
-      }
-    }
 
     info(`Starting VS Code Tunnel: ${tunnelName}. Enable Debug logging to see more detail on the process.`);
 

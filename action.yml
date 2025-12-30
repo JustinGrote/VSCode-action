@@ -4,7 +4,7 @@ author: "GitHub"
 
 inputs:
   tunnel-name:
-    description: "Name for the tunnel"
+    description: "Name for the tunnel. Must be less than 20 characters"
     required: false
   connection-timeout:
     description: "Connection timeout in minutes (default 2). If no connection is detected within this period the action will terminate the tunnel."

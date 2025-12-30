@@ -21765,28 +21765,6 @@ var import_node_process = require("node:process");
 async function main() {
   try {
     let tunnelName = (0, import_core.getInput)("tunnel-name");
-    if (!tunnelName || tunnelName.trim().length === 0) {
-      const workflow = (process.env.GITHUB_WORKFLOW || "workflow").replace(/\s+/g, "-");
-      const runId = process.env.GITHUB_RUN_ID || String(Date.now());
-      const sep = "-";
-      const maxTotal = 20;
-      const maxWorkflowLen = Math.max(0, maxTotal - runId.length - sep.length);
-      let shortWorkflow = workflow;
-      if (shortWorkflow.length > maxWorkflowLen) {
-        shortWorkflow = shortWorkflow.slice(0, maxWorkflowLen);
-      }
-      shortWorkflow = shortWorkflow.replace(/-+$/g, "");
-      let generated = shortWorkflow.length > 0 ? `${shortWorkflow}${sep}${runId}` : runId.slice(0, maxTotal);
-      if (generated.length > maxTotal) {
-        generated = generated.slice(0, maxTotal);
-      }
-      tunnelName = generated;
-      (0, import_core.debug)(`Generated tunnel name: ${tunnelName}`);
-    } else {
-      if (tunnelName.trim().length > 20) {
-        throw new Error("Tunnel name must be 20 characters or fewer.");
-      }
-    }
     (0, import_core.info)(`Starting VS Code Tunnel: ${tunnelName}. Enable Debug logging to see more detail on the process.`);
     const connectionTimeoutMinutes = (() => {
       const v = (0, import_core.getInput)("connection-timeout");
