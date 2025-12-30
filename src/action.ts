@@ -186,6 +186,7 @@ async function main() {
       'tunnel',
       '--accept-server-license-terms',
       '--cli-data-dir',
+      '--verbose',
       cliDataDir
     ];
 
@@ -217,6 +218,10 @@ async function main() {
         const lines = text.split(/\r?\n/).filter(l => l.length > 0);
         for (const line of lines) {
           debug(line);
+          // Show instructions to the user
+          if (line.startsWith('Open this link') || line.startsWith('To grant access')) {
+            info(line)
+          }
           if (!connected && line.includes(connectionIndicator)) {
             connected = true;
             debug('Connection detected; switching to session timeout');

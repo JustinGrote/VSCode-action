@@ -21904,6 +21904,7 @@ async function main() {
       "tunnel",
       "--accept-server-license-terms",
       "--cli-data-dir",
+      "--verbose",
       cliDataDir
     ];
     if (tunnelName) {
@@ -21925,6 +21926,9 @@ async function main() {
         const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
         for (const line of lines) {
           (0, import_core.debug)(line);
+          if (line.startsWith("Open this link") || line.startsWith("To grant access")) {
+            (0, import_core.info)(line);
+          }
           if (!connected && line.includes(connectionIndicator)) {
             connected = true;
             (0, import_core.debug)("Connection detected; switching to session timeout");
