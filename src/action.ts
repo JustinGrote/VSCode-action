@@ -185,8 +185,8 @@ async function main() {
     const tunnelArgs = [
       'tunnel',
       '--accept-server-license-terms',
-      '--cli-data-dir',
       '--verbose',
+      '--cli-data-dir',
       cliDataDir
     ];
 
