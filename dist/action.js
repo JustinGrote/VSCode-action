@@ -73589,11 +73589,33 @@ async function main() {
       tunnelArgs.push("--name", tunnelName);
     }
     const options = {
-      stdio: "pipe"
+      stdio: "pipe",
+      detached: true
     };
     (0, import_core.debug)(`Starting: ${cliPath} ${tunnelArgs.join(" ")}`);
     const child = (0, import_node_child_process.spawn)(cliPath, tunnelArgs, options);
+    child.unref();
     (0, import_core.debug)("VS Code tunnel started (foreground) - capturing output");
+    const continueFilePaths = ["/ghacontinue", (0, import_node_path.join)((0, import_node_os.homedir)(), "ghacontinue")];
+    const continuePollIntervalMs = 5e3;
+    const checkContinueFiles = () => {
+      for (const p of continueFilePaths) {
+        try {
+          if ((0, import_node_fs.existsSync)(p)) {
+            return p;
+          }
+        } catch {
+        }
+      }
+      return void 0;
+    };
+    const continueWatcher = setInterval(() => {
+      const found = checkContinueFiles();
+      if (found) {
+        (0, import_core.info)(`Continue file detected: ${found} \u2014 detaching and allowing action to exit`);
+        (0, import_node_process.exit)(0);
+      }
+    }, continuePollIntervalMs);
     let connected = false;
     let connectionTimer = null;
     let sessionTimer = null;
