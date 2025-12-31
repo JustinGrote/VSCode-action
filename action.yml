@@ -14,10 +14,13 @@ inputs:
     description: "Session timeout in minutes (default 60). Starts after a connection is detected and will terminate the tunnel when reached."
     required: false
     default: "60"
+  no-cache-cli-auth:
+    description: "By default, the tunnel auth information is cached between runs in a per-user cache for convenience to only require device code authentication occasionally. Set this to true to disable caching of auth information, which is more secure but will require a device code auth to be performed on every invocation"
+    required: false
+    default: "false"
 outputs:
   tunnel-url:
     description: "The URL for accessing the tunnel"
-
 runs:
   using: node20
   main: dist/action.js

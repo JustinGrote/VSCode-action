@@ -178,12 +178,16 @@ async function main() {
 
     const githubActor = process.env.GITHUB_ACTOR || '';
     if (githubActor) {
-      const dataCacheName = `vscode-cli-data-${githubActor}`;
-      const cacheKey = await restoreCache([cliDataDir], dataCacheName)
-      if (cacheKey) {
-        debug(`Restored CLI data dir from cache: ${cacheKey}`);
+      if (getInput('no-cache-cli-auth') === 'true') {
+        debug('Skipping CLI data dir cache restore/save as no-cache-cli-auth is set to true');
       } else {
-        debug(`No cached CLI data dir found for path ${cliDataDir} and key: ${dataCacheName}`);
+        const dataCacheName = `vscode-cli-data-${githubActor}`;
+        const cacheKey = await restoreCache([cliDataDir], dataCacheName)
+        if (cacheKey) {
+          debug(`Restored CLI data dir from cache: ${cacheKey}`);
+        } else {
+          debug(`No cached CLI data dir found for path ${cliDataDir} and key: ${dataCacheName}`);
+        }
       }
     } else {
       debug('GITHUB_ACTOR not set; skipping cached cli data dir check');
