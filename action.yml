@@ -1,7 +1,9 @@
 name: "VS Code Tunnel"
 description: "Download VS Code CLI and start a code tunnel"
-author: "GitHub"
-
+author: "Justin Grote"
+branding:
+  icon: "code"
+  color: "blue"
 inputs:
   tunnel-name:
     description: "Name for the tunnel. Must be less than 20 characters"
