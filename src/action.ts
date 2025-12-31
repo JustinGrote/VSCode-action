@@ -213,13 +213,42 @@ async function main() {
 
     // Start tunnel in foreground and capture output so we can forward it
     const options: SpawnOptions = {
-      stdio: 'pipe'
+      stdio: 'pipe',
+      detached: true
     };
 
     debug(`Starting: ${cliPath} ${tunnelArgs.join(' ')}`);
     const child = spawn(cliPath, tunnelArgs, options);
+    child.unref();
 
     debug('VS Code tunnel started (foreground) - capturing output');
+
+
+    // If a file `/ghacontinue` or `~/ghacontinue` is created, detach the tunnel
+    const continueFilePaths = ['/ghacontinue', join(homedir(), 'ghacontinue')];
+    const continuePollIntervalMs = 5_000;
+    const checkContinueFiles = () => {
+      for (const p of continueFilePaths) {
+        try {
+          if (existsSync(p)) {
+            return p;
+          }
+        } catch {
+          // ignore permission errors
+        }
+      }
+      return undefined;
+    };
+
+    // create the watcher (defined before promise so cleanup can access it)
+    const continueWatcher = setInterval(() => {
+      const found = checkContinueFiles();
+      if (found) {
+        info(`Continue file detected: ${found} — detaching and allowing action to exit`);
+        exit(0)
+      }
+    }, continuePollIntervalMs);
+
 
     // Track connection state and timers. If no connection is detected within
     // `connectionTimeoutMs`, terminate. Once a connection is detected, start
