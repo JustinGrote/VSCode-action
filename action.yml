@@ -7,9 +7,9 @@ inputs:
     description: "Name for the tunnel. Must be less than 20 characters"
     required: false
   connection-timeout:
-    description: "Connection timeout in minutes (default 2). If no connection is detected within this period the action will terminate the tunnel."
+    description: "Connection timeout in minutes (default 5). If no connection is detected within this period the action will terminate the tunnel."
     required: false
-    default: "2"
+    default: "5"
   session-timeout:
     description: "Session timeout in minutes (default 60). Starts after a connection is detected and will terminate the tunnel when reached."
     required: false

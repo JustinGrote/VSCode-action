@@ -182,6 +182,8 @@ async function main() {
       const cacheKey = await restoreCache([cliDataDir], dataCacheName)
       if (cacheKey) {
         debug(`Restored CLI data dir from cache: ${cacheKey}`);
+      } else {
+        debug(`No cached CLI data dir found for path ${cliDataDir} and key: ${dataCacheName}`);
       }
     } else {
       debug('GITHUB_ACTOR not set; skipping cached cli data dir check');
@@ -221,6 +223,8 @@ async function main() {
     let connected = false;
     let connectionTimer: NodeJS.Timeout | null = null;
     let sessionTimer: NodeJS.Timeout | null = null;
+    // TODO: Track this as a timer after login
+    // const readyIndicator = 'Visual Studio Code Server is listening for incoming connections';
     const connectionIndicator = '[tunnels::connections::relay_tunnel_host] Opened new client';
 
     if (child.stdout) {

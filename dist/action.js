@@ -73564,6 +73564,8 @@ async function main() {
       const cacheKey = await (0, import_cache.restoreCache)([cliDataDir], dataCacheName);
       if (cacheKey) {
         (0, import_core.debug)(`Restored CLI data dir from cache: ${cacheKey}`);
+      } else {
+        (0, import_core.debug)(`No cached CLI data dir found for path ${cliDataDir} and key: ${dataCacheName}`);
       }
     } else {
       (0, import_core.debug)("GITHUB_ACTOR not set; skipping cached cli data dir check");
