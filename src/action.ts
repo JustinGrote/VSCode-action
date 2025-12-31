@@ -1,5 +1,6 @@
 import { debug, getInput, info, setFailed, warning, error } from '@actions/core';
 import { cacheFile, downloadTool, extractTar, extractZip, find } from '@actions/tool-cache';
+import { saveCache, restoreCache } from '@actions/cache';
 import { spawn, SpawnOptions } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync } from 'node:fs';
 import https from 'node:https';
@@ -10,7 +11,6 @@ import { exit } from 'node:process';
 async function main() {
   try {
     let tunnelName = getInput('tunnel-name');
-
 
     info(`Starting VS Code Tunnel: ${tunnelName}. Enable Debug logging to see more detail on the process.`);
 
@@ -126,13 +126,13 @@ async function main() {
     // If we were able to determine a stable version, check the tool cache
     let cliPath = '';
     try {
-      debug('Checking runner tool cache for cached VS Code CLI...');
+      debug(`Checking runner tool cache for cached VS Code CLI ${cliToolCacheName} version ${stableVersion}...`);
       const found = find(cliToolCacheName, stableVersion);
       if (found) {
         cliPath = found;
         debug(`Found cached VS Code CLI ${stableVersion} in tool cache: ${cliPath}`);
       } else {
-        debug('No cached VS Code CLI found for this version/arch.');
+        debug(`No cached VS Code CLI found for version ${stableVersion} and architecture ${runnerArch}.`);
       }
     } catch (err) {
       warning(`Tool cache check failed: ${err}`);
@@ -162,7 +162,7 @@ async function main() {
         chmodSync(extractCliPath, 0o755);
       }
 
-      debug('Caching VS Code CLI...');
+      debug(`Caching VS Code CLI ${extractCliPath} ${cliName} to ${cliToolCacheName} version ${stableVersion}...`);
       const cacheDir = await cacheFile(extractCliPath, cliName, cliToolCacheName, stableVersion);
       debug(`Cached VS Code CLI to: ${cacheDir}`);
 
@@ -173,8 +173,19 @@ async function main() {
       throw new Error('Failed to download and extract VS Code CLI');
     }
 
-    // Create CLI data directory
+    // Create CLI data directory (allow reuse from GitHub Actions tool cache keyed by actor)
     let cliDataDir = join(homedir(), 'vscode-cli-data');
+
+    const githubActor = process.env.GITHUB_ACTOR || '';
+    if (githubActor) {
+      const dataCacheName = `vscode-cli-data-${githubActor}`;
+      const cacheKey = await restoreCache([cliDataDir], dataCacheName)
+      if (cacheKey) {
+        debug(`Restored CLI data dir from cache: ${cacheKey}`);
+      }
+    } else {
+      debug('GITHUB_ACTOR not set; skipping cached cli data dir check');
+    }
 
     if (!existsSync(cliDataDir)) {
       mkdirSync(cliDataDir, { recursive: true });
@@ -276,6 +287,16 @@ async function main() {
       });
     });
 
+    if (githubActor) {
+      const dataCacheName = `vscode-cli-data-${githubActor}`;
+      try {
+        debug('Saving CLI data dir to cache...');
+        const cacheId = await saveCache([cliDataDir], dataCacheName);
+        debug(`Saved CLI data dir to cache: ${cacheId}`);
+      } catch (err) {
+        warning(`Failed to save CLI data dir to cache: ${err}`);
+      }
+    }
   } catch (error) {
     setFailed(`Action failed with error: ${error instanceof Error ? error.message : String(error)}`);
     exit(1);
